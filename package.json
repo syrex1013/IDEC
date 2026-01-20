@@ -64,11 +64,17 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ]
     },
@@ -92,6 +98,7 @@
   "dependencies": {
     "@emotion/is-prop-valid": "^1.4.0",
     "@monaco-editor/react": "^4.7.0",
+    "adm-zip": "^0.5.16",
     "file-icons-js": "^1.1.0",
     "framer-motion": "^12.27.0",
     "lucide-react": "^0.562.0",
@@ -102,7 +109,6 @@
     "xterm-addon-fit": "^0.8.0"
   },
   "devDependencies": {
-    "electron": "^40.0.0",
     "@babel/core": "^7.28.6",
     "@babel/preset-env": "^7.28.6",
     "@babel/preset-react": "^7.28.5",
@@ -113,6 +119,7 @@
     "concurrently": "^9.2.1",
     "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^7.1.2",
+    "electron": "^40.0.0",
     "electron-builder": "^26.4.0",
     "html-webpack-plugin": "^5.6.6",
     "identity-obj-proxy": "^3.0.0",

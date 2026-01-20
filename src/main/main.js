@@ -2330,10 +2330,11 @@ ipcMain.handle('extensions-install', async (event, extensionId) => {
     }
     fs.mkdirSync(extDir, { recursive: true });
     
-    // Use unzip command
+    // Use adm-zip for cross-platform extraction
     sendOutputLog('Extensions', 'info', `Extracting extension files...`);
-    const { execSync } = require('child_process');
-    execSync(`unzip -q "${vsixPath}" -d "${extDir}"`);
+    const AdmZip = require('adm-zip');
+    const zip = new AdmZip(vsixPath);
+    zip.extractAllTo(extDir, true);
     
     // Clean up vsix file
     fs.unlinkSync(vsixPath);
@@ -2410,10 +2411,11 @@ ipcMain.handle('extensions-install-vsix', async () => {
     }
     fs.mkdirSync(extDir, { recursive: true });
     
-    // Extract VSIX
+    // Use adm-zip for cross-platform extraction
     sendOutputLog('Extensions', 'info', `Extracting extension files...`);
-    const { execSync } = require('child_process');
-    execSync(`unzip -q "${vsixPath}" -d "${extDir}"`);
+    const AdmZip = require('adm-zip');
+    const zip = new AdmZip(vsixPath);
+    zip.extractAllTo(extDir, true);
     
     // Read package.json from extension
     const packageJsonPath = path.join(extDir, 'extension', 'package.json');

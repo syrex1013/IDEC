@@ -4,18 +4,22 @@
   "description": "AI-Powered IDE with Claude, OpenAI, Groq, and Ollama Integration",
   "main": "src/main/main.js",
   "scripts": {
-    "start": "concurrently \"bun run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "start": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
     "dev": "webpack serve --mode development",
     "build": "webpack --mode production",
     "electron": "electron .",
+    "lint": "echo 'No linter configured'",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "pack": "bun run build && electron-builder --dir",
-    "dist": "bun run build && electron-builder",
-    "dist:mac": "bun run build && electron-builder --mac",
-    "dist:win": "bun run build && electron-builder --win",
-    "dist:linux": "bun run build && electron-builder --linux"
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "package:mac": "electron-builder --mac",
+    "package:win": "electron-builder --win",
+    "package:linux": "electron-builder --linux"
   },
   "keywords": [
     "ide",

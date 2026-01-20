@@ -71,3 +71,42 @@ Object.assign(navigator, {
 
 // Mock confirm dialog
 window.confirm = jest.fn(() => true);
+
+// Mock xterm.js
+const mockTerminal = {
+  options: {},
+  open: jest.fn(),
+  write: jest.fn(),
+  writeln: jest.fn(),
+  clear: jest.fn(),
+  reset: jest.fn(),
+  dispose: jest.fn(),
+  onData: jest.fn(() => ({ dispose: jest.fn() })),
+  onResize: jest.fn(() => ({ dispose: jest.fn() })),
+  loadAddon: jest.fn(),
+  focus: jest.fn(),
+  blur: jest.fn(),
+  cols: 80,
+  rows: 24,
+  element: document.createElement('div')
+};
+
+jest.mock('xterm', () => ({
+  Terminal: jest.fn(() => mockTerminal)
+}), { virtual: true });
+
+jest.mock('xterm-addon-fit', () => ({
+  FitAddon: jest.fn(() => ({
+    fit: jest.fn(),
+    proposeDimensions: jest.fn(() => ({ cols: 80, rows: 24 })),
+    dispose: jest.fn()
+  }))
+}), { virtual: true });
+
+jest.mock('xterm-addon-web-links', () => ({
+  WebLinksAddon: jest.fn(() => ({
+    dispose: jest.fn()
+  }))
+}), { virtual: true });
+
+global.__mockXterm = mockTerminal;

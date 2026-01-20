@@ -561,7 +561,53 @@ ipcMain.handle('open-folder-dialog', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory']
   });
-  return result.canceled ? null : result.filePaths[0];
+  if (result.canceled) return null;
+  const folderPath = result.filePaths[0];
+  // Add to recent projects
+  addToRecentProjects(folderPath);
+  return folderPath;
+});
+
+// Add folder to recent projects (max 5)
+function addToRecentProjects(folderPath) {
+  try {
+    const settings = loadSettings() || {};
+    let recentProjects = settings.recentProjects || [];
+    
+    // Remove if already exists (will be added to front)
+    recentProjects = recentProjects.filter(p => p.path !== folderPath);
+    
+    // Add to front
+    recentProjects.unshift({
+      path: folderPath,
+      name: path.basename(folderPath),
+      openedAt: Date.now()
+    });
+    
+    // Keep only last 5
+    recentProjects = recentProjects.slice(0, 5);
+    
+    settings.recentProjects = recentProjects;
+    saveSettings(settings);
+  } catch (error) {
+    console.error('Error adding to recent projects:', error);
+  }
+}
+
+// IPC for adding to recent projects (called when opening via other means)
+ipcMain.handle('add-recent-project', async (event, folderPath) => {
+  addToRecentProjects(folderPath);
+  return { success: true };
+});
+
+// Get recent projects
+ipcMain.handle('get-recent-projects', async () => {
+  try {
+    const settings = loadSettings() || {};
+    return { success: true, projects: settings.recentProjects || [] };
+  } catch (error) {
+    return { success: false, error: error.message, projects: [] };
+  }
 });
 
 // Codebase indexing for AI context

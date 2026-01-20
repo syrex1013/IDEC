@@ -187,7 +187,19 @@ function App() {
     }
   };
 
+  // Open a project directly (from recent projects list)
+  const handleOpenProject = async (projectPath) => {
+    // Add to recent projects
+    await ipcRenderer.invoke('add-recent-project', projectPath);
+    setWorkspacePath(projectPath);
+    setOpenFiles([]);
+    setActiveFile(null);
+    indexCodebase(projectPath);
+  };
+
   const handleProjectCreated = (projectPath) => {
+    // Add to recent projects
+    ipcRenderer.invoke('add-recent-project', projectPath);
     setWorkspacePath(projectPath);
     setOpenFiles([]);
     setActiveFile(null);
@@ -195,6 +207,8 @@ function App() {
   };
 
   const handleCloneComplete = (clonedPath) => {
+    // Add to recent projects
+    ipcRenderer.invoke('add-recent-project', clonedPath);
     setWorkspacePath(clonedPath);
     setOpenFiles([]);
     setActiveFile(null);
@@ -373,6 +387,7 @@ function App() {
             workspacePath={workspacePath}
             onFileSelect={handleFileSelect}
             onOpenFolder={handleOpenFolder}
+            onOpenProject={handleOpenProject}
             width={fileExplorerWidth}
             settings={settings}
           />

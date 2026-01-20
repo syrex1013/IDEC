@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, FilePlus, FolderPlus, Trash2, Edit3, Copy, Move, Clipboard } from 'lucide-react';
+import { ChevronRight, FilePlus, FolderPlus, Trash2, Edit3, Copy, Move, Clipboard, Clock, Folder } from 'lucide-react';
 
 const { ipcRenderer } = window.require('electron');
 
@@ -183,13 +183,25 @@ const folderIcons = {
 const defaultFileIcon = { icon: 'FILE', color: '#fff', bg: '#6d8086' };
 const defaultFolderColor = '#90CAF9';
 
-function FileExplorer({ workspacePath, onFileSelect, onOpenFolder, width = 260 }) {
+function FileExplorer({ workspacePath, onFileSelect, onOpenFolder, onOpenProject, width = 260 }) {
   const [tree, setTree] = useState([]);
   const [expandedDirs, setExpandedDirs] = useState(new Set());
   const [contextMenu, setContextMenu] = useState(null);
   const [draggedItem, setDraggedItem] = useState(null);
   const [dropTarget, setDropTarget] = useState(null);
+  const [recentProjects, setRecentProjects] = useState([]);
   const refreshTimeoutRef = useRef(null);
+
+  // Load recent projects on mount
+  useEffect(() => {
+    const loadRecentProjects = async () => {
+      const result = await ipcRenderer.invoke('get-recent-projects');
+      if (result.success && result.projects) {
+        setRecentProjects(result.projects);
+      }
+    };
+    loadRecentProjects();
+  }, []);
 
   const loadDirectory = useCallback(async (dirPath) => {
     const result = await ipcRenderer.invoke('read-directory', dirPath);
@@ -496,6 +508,12 @@ function FileExplorer({ workspacePath, onFileSelect, onOpenFolder, width = 260 }
   }, []);
 
   if (!workspacePath) {
+    const handleOpenRecentProject = (projectPath) => {
+      if (onOpenProject) {
+        onOpenProject(projectPath);
+      }
+    };
+
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -507,18 +525,91 @@ function FileExplorer({ workspacePath, onFileSelect, onOpenFolder, width = 260 }
           borderRight: '1px solid var(--border)',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
           padding: 24
         }}
       >
-        <div style={{ opacity: 0.5, marginBottom: 16 }}>
-          <FolderIcon folderName="" isOpen={false} size={48} />
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ opacity: 0.5, marginBottom: 16 }}>
+            <FolderIcon folderName="" isOpen={false} size={48} />
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 16 }}>No folder opened</p>
+          <button className="btn btn-outline btn-sm" onClick={onOpenFolder}>
+            Open Folder
+          </button>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 16 }}>No folder opened</p>
-        <button className="btn btn-outline btn-sm" onClick={onOpenFolder}>
-          Open Folder
-        </button>
+        
+        {recentProjects.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 8, 
+              marginBottom: 12,
+              paddingBottom: 8,
+              borderBottom: '1px solid var(--border)'
+            }}>
+              <Clock size={14} style={{ color: 'var(--muted-foreground)' }} />
+              <span style={{ 
+                fontSize: 11, 
+                fontWeight: 600, 
+                color: 'var(--muted-foreground)', 
+                textTransform: 'uppercase', 
+                letterSpacing: 0.8 
+              }}>
+                Recent Projects
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {recentProjects.map((project, index) => (
+                <motion.button
+                  key={project.path}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => handleOpenRecentProject(project.path)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '8px 12px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s ease',
+                    width: '100%'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <Folder size={16} style={{ color: '#90CAF9', flexShrink: 0 }} />
+                  <div style={{ overflow: 'hidden', flex: 1 }}>
+                    <div style={{ 
+                      fontSize: 13, 
+                      color: 'var(--foreground)', 
+                      fontWeight: 500,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {project.name}
+                    </div>
+                    <div style={{ 
+                      fontSize: 11, 
+                      color: 'var(--muted-foreground)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {project.path}
+                    </div>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
       </motion.div>
     );
   }

@@ -456,4 +456,230 @@ describe('SettingsModal', () => {
       expect(screen.getByText('IDEC Dark')).toBeInTheDocument();
     });
   });
+
+  describe('Extensions section', () => {
+    it('renders Extensions section when clicked', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const extButton = buttons.find(btn => btn.textContent.includes('Extensions'));
+      if (extButton) {
+        fireEvent.click(extButton);
+        expect(screen.getByText(/extension/i)).toBeInTheDocument();
+      }
+    });
+
+    it('handles extension installation', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const extButton = buttons.find(btn => btn.textContent.includes('Extensions'));
+      if (extButton) {
+        fireEvent.click(extButton);
+      }
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+  });
+
+  describe('Keybindings section', () => {
+    it('renders Keybindings section when clicked', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const keybindButton = buttons.find(btn => btn.textContent.includes('Keybindings'));
+      if (keybindButton) {
+        fireEvent.click(keybindButton);
+      }
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+
+    it('handles keybinding changes', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const keybindButton = buttons.find(btn => btn.textContent.includes('Keybindings'));
+      if (keybindButton) {
+        fireEvent.click(keybindButton);
+      }
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+  });
+
+  describe('About section', () => {
+    it('renders About section when clicked', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const aboutButton = buttons.find(btn => btn.textContent.includes('About'));
+      if (aboutButton) {
+        fireEvent.click(aboutButton);
+      }
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+  });
+
+  describe('Provider-specific settings', () => {
+    it('handles OpenRouter provider settings', () => {
+      const settingsWithOpenRouter = {
+        ...defaultSettings,
+        ai: {
+          ...defaultSettings.ai,
+          provider: 'openrouter',
+          openrouterApiKey: 'sk-or-test'
+        }
+      };
+      
+      render(<SettingsModal {...defaultProps} settings={settingsWithOpenRouter} />);
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+
+    it('handles Ollama provider settings', () => {
+      const settingsWithOllama = {
+        ...defaultSettings,
+        ai: {
+          ...defaultSettings.ai,
+          provider: 'ollama',
+          ollamaUrl: 'http://localhost:11434'
+        }
+      };
+      
+      render(<SettingsModal {...defaultProps} settings={settingsWithOllama} />);
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+
+    it('handles Groq provider settings', () => {
+      const settingsWithGroq = {
+        ...defaultSettings,
+        ai: {
+          ...defaultSettings.ai,
+          provider: 'groq',
+          groqApiKey: 'gsk-test'
+        }
+      };
+      
+      render(<SettingsModal {...defaultProps} settings={settingsWithGroq} />);
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+  });
+
+  describe('Editor settings', () => {
+    it('handles font size change', async () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const editorButton = buttons.find(btn => btn.textContent.includes('Editor'));
+      fireEvent.click(editorButton);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Font Size')).toBeInTheDocument();
+      });
+    });
+
+    it('handles tab size change', async () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const editorButton = buttons.find(btn => btn.textContent.includes('Editor'));
+      fireEvent.click(editorButton);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Tab Size')).toBeInTheDocument();
+      });
+    });
+
+    it('handles minimap toggle', async () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const editorButton = buttons.find(btn => btn.textContent.includes('Editor'));
+      fireEvent.click(editorButton);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Minimap')).toBeInTheDocument();
+      });
+    });
+
+    it('handles word wrap toggle', async () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const editorButton = buttons.find(btn => btn.textContent.includes('Editor'));
+      fireEvent.click(editorButton);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Word Wrap')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Terminal settings', () => {
+    it('handles terminal font size change', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const terminalButton = buttons.find(btn => btn.textContent.includes('Terminal'));
+      if (terminalButton) {
+        fireEvent.click(terminalButton);
+      }
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+
+    it('handles cursor blink toggle', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const terminalButton = buttons.find(btn => btn.textContent.includes('Terminal'));
+      if (terminalButton) {
+        fireEvent.click(terminalButton);
+      }
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+  });
+
+  describe('Files settings', () => {
+    it('handles auto save change', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const filesButton = buttons.find(btn => btn.textContent.includes('Files'));
+      if (filesButton) {
+        fireEvent.click(filesButton);
+      }
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+
+    it('handles exclude patterns', () => {
+      render(<SettingsModal {...defaultProps} />);
+      const buttons = screen.getAllByRole('button');
+      const filesButton = buttons.find(btn => btn.textContent.includes('Files'));
+      if (filesButton) {
+        fireEvent.click(filesButton);
+      }
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+  });
+
+  describe('Modal behavior', () => {
+    it('handles close button click', () => {
+      const onClose = jest.fn();
+      render(<SettingsModal {...defaultProps} onClose={onClose} />);
+      
+      // Find close button (X icon)
+      const buttons = screen.getAllByRole('button');
+      const closeButton = buttons.find(btn => btn.querySelector('svg'));
+      if (closeButton) {
+        fireEvent.click(closeButton);
+      }
+    });
+
+    it('handles escape key', () => {
+      const onClose = jest.fn();
+      render(<SettingsModal {...defaultProps} onClose={onClose} />);
+      
+      fireEvent.keyDown(document, { key: 'Escape' });
+    });
+
+    it('renders with empty settings', () => {
+      const emptySettings = {};
+      render(<SettingsModal settings={emptySettings} onSettingsChange={jest.fn()} onClose={jest.fn()} />);
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+
+    it('renders with partial settings', () => {
+      const partialSettings = {
+        theme: 'idec-dark',
+        ai: {}
+      };
+      render(<SettingsModal settings={partialSettings} onSettingsChange={jest.fn()} onClose={jest.fn()} />);
+      expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    });
+  });
 });

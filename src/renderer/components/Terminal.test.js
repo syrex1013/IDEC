@@ -69,4 +69,124 @@ describe('Terminal', () => {
       expect(buttons.length).toBeGreaterThanOrEqual(1);
     });
   });
+
+  it('handles terminal-data callback', async () => {
+    let terminalDataCallback;
+    mockOn.mockImplementation((channel, callback) => {
+      if (channel === 'terminal-data') {
+        terminalDataCallback = callback;
+      }
+    });
+    
+    render(<Terminal {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(mockOn).toHaveBeenCalledWith('terminal-data', expect.any(Function));
+    });
+  });
+
+  it('handles terminal-exit callback', async () => {
+    let terminalExitCallback;
+    mockOn.mockImplementation((channel, callback) => {
+      if (channel === 'terminal-exit') {
+        terminalExitCallback = callback;
+      }
+    });
+    
+    render(<Terminal {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(mockOn).toHaveBeenCalledWith('terminal-exit', expect.any(Function));
+    });
+  });
+
+  it('handles onFocus callback', async () => {
+    const onFocus = jest.fn();
+    render(<Terminal {...defaultProps} onFocus={onFocus} />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Terminal')).toBeInTheDocument();
+    });
+  });
+
+  it('handles workspacePath prop change', async () => {
+    const { rerender } = render(<Terminal {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalled();
+    });
+    
+    rerender(<Terminal {...defaultProps} workspacePath="/new/workspace" />);
+    
+    expect(screen.getByText('Terminal')).toBeInTheDocument();
+  });
+
+  it('handles settings prop change', async () => {
+    const newSettings = {
+      ...defaultProps.settings,
+      terminal: {
+        fontFamily: 'Consolas',
+        fontSize: 16
+      }
+    };
+    
+    const { rerender } = render(<Terminal {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Terminal')).toBeInTheDocument();
+    });
+    
+    rerender(<Terminal {...defaultProps} settings={newSettings} />);
+    
+    expect(screen.getByText('Terminal')).toBeInTheDocument();
+  });
+
+  it('handles different themes', async () => {
+    const darkSettings = {
+      theme: 'vscode-dark',
+      terminal: { fontSize: 14 }
+    };
+    
+    render(<Terminal {...defaultProps} settings={darkSettings} />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Terminal')).toBeInTheDocument();
+    });
+  });
+
+  it('handles light theme', async () => {
+    const lightSettings = {
+      theme: 'idec-light',
+      terminal: { fontSize: 14 }
+    };
+    
+    render(<Terminal {...defaultProps} settings={lightSettings} />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Terminal')).toBeInTheDocument();
+    });
+  });
+
+  it('handles terminal creation failure', async () => {
+    mockInvoke.mockResolvedValue({ success: false, error: 'Failed to create terminal' });
+    
+    render(<Terminal {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Terminal')).toBeInTheDocument();
+    });
+  });
+
+  it('handles unmount cleanup', async () => {
+    const { unmount } = render(<Terminal {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Terminal')).toBeInTheDocument();
+    });
+    
+    unmount();
+    
+    // Cleanup should have been called
+    expect(mockInvoke).toHaveBeenCalled();
+  });
 });

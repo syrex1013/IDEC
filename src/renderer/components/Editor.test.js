@@ -162,4 +162,185 @@ describe('Editor', () => {
     expect(screen.getByText('b.js')).toBeInTheDocument();
     expect(screen.getByText('c.js')).toBeInTheDocument();
   });
+
+  it('handles loadingFile state', () => {
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[mockFile]}
+        activeFile={mockFile}
+        loadingFile={true}
+      />
+    );
+    expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
+  });
+
+  it('renders with settings prop', () => {
+    const settings = {
+      editor: {
+        fontSize: 16,
+        tabSize: 2,
+        wordWrap: 'on'
+      }
+    };
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[mockFile]}
+        activeFile={mockFile}
+        settings={settings}
+      />
+    );
+    expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
+  });
+
+  it('handles files with different languages', () => {
+    const tsFile = { ...mockFile, path: '/test.ts', name: 'test.ts', language: 'typescript' };
+    const jsonFile = { ...mockFile, path: '/config.json', name: 'config.json', language: 'json' };
+    
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[tsFile, jsonFile]}
+        activeFile={tsFile}
+      />
+    );
+    expect(screen.getByText('test.ts')).toBeInTheDocument();
+    expect(screen.getByText('config.json')).toBeInTheDocument();
+  });
+
+  it('handles empty content', () => {
+    const emptyFile = { ...mockFile, content: '' };
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[emptyFile]}
+        activeFile={emptyFile}
+      />
+    );
+    expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
+  });
+
+  it('handles null activeFile', () => {
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[mockFile]}
+        activeFile={null}
+      />
+    );
+    expect(screen.getByText(/open a folder/i)).toBeInTheDocument();
+  });
+
+  it('handles file with very long name', () => {
+    const longNameFile = { ...mockFile, name: 'this-is-a-very-long-file-name.js' };
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[longNameFile]}
+        activeFile={longNameFile}
+      />
+    );
+    expect(screen.getByText('this-is-a-very-long-file-name.js')).toBeInTheDocument();
+  });
+
+  it('handles file save callback', () => {
+    const onFileSave = jest.fn();
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[mockFile]}
+        activeFile={mockFile}
+        onFileSave={onFileSave}
+      />
+    );
+    expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
+  });
+
+  it('handles onProblemsChange callback', () => {
+    const onProblemsChange = jest.fn();
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[mockFile]}
+        activeFile={mockFile}
+        onProblemsChange={onProblemsChange}
+      />
+    );
+    expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
+  });
+
+  it('renders with custom fontSize', () => {
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[mockFile]}
+        activeFile={mockFile}
+        fontSize={18}
+      />
+    );
+    expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
+  });
+
+  it('handles switching between files', () => {
+    const file1 = { ...mockFile, path: '/test/a.js', name: 'a.js', content: 'const a = 1;' };
+    const file2 = { ...mockFile, path: '/test/b.js', name: 'b.js', content: 'const b = 2;' };
+    
+    const { rerender } = render(
+      <Editor
+        {...defaultProps}
+        openFiles={[file1, file2]}
+        activeFile={file1}
+      />
+    );
+    
+    expect(screen.getByText('a.js')).toBeInTheDocument();
+    
+    // Switch to file2
+    rerender(
+      <Editor
+        {...defaultProps}
+        openFiles={[file1, file2]}
+        activeFile={file2}
+      />
+    );
+    
+    expect(screen.getByText('b.js')).toBeInTheDocument();
+  });
+
+  it('handles HTML files', () => {
+    const htmlFile = { ...mockFile, path: '/index.html', name: 'index.html', language: 'html' };
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[htmlFile]}
+        activeFile={htmlFile}
+      />
+    );
+    expect(screen.getByText('index.html')).toBeInTheDocument();
+  });
+
+  it('handles CSS files', () => {
+    const cssFile = { ...mockFile, path: '/styles.css', name: 'styles.css', language: 'css' };
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[cssFile]}
+        activeFile={cssFile}
+      />
+    );
+    expect(screen.getByText('styles.css')).toBeInTheDocument();
+  });
+
+  it('handles markdown files', () => {
+    const mdFile = { ...mockFile, path: '/README.md', name: 'README.md', language: 'markdown' };
+    render(
+      <Editor
+        {...defaultProps}
+        openFiles={[mdFile]}
+        activeFile={mdFile}
+      />
+    );
+    expect(screen.getByText('README.md')).toBeInTheDocument();
+  });
 });

@@ -571,6 +571,7 @@ ipcMain.handle('open-folder-dialog', async () => {
 // Add folder to recent projects (max 5)
 function addToRecentProjects(folderPath) {
   try {
+    console.log('[Main] Adding to recent projects:', folderPath);
     const settings = loadSettings() || {};
     let recentProjects = settings.recentProjects || [];
     
@@ -588,7 +589,8 @@ function addToRecentProjects(folderPath) {
     recentProjects = recentProjects.slice(0, 5);
     
     settings.recentProjects = recentProjects;
-    saveSettings(settings);
+    const saveResult = saveSettings(settings);
+    console.log('[Main] Saved recent projects:', recentProjects.length, 'items, save result:', saveResult);
   } catch (error) {
     console.error('Error adding to recent projects:', error);
   }
@@ -604,8 +606,10 @@ ipcMain.handle('add-recent-project', async (event, folderPath) => {
 ipcMain.handle('get-recent-projects', async () => {
   try {
     const settings = loadSettings() || {};
+    console.log('[Main] Getting recent projects from settings:', settings.recentProjects);
     return { success: true, projects: settings.recentProjects || [] };
   } catch (error) {
+    console.error('[Main] Error getting recent projects:', error);
     return { success: false, error: error.message, projects: [] };
   }
 });

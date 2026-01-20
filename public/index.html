@@ -26,6 +26,14 @@
           },
           shell: {
             openExternal: (url) => { window.open(url, '_blank'); return Promise.resolve(); }
+          },
+          clipboard: {
+            writeText: (text) => { 
+              if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(text);
+              }
+            },
+            readText: () => Promise.resolve('')
           }
         };
       }

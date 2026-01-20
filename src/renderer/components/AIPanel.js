@@ -2,7 +2,51 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, MessageSquare, BookOpen, RefreshCw, Sparkles, Send, Trash2, Copy, Plus, Check, ChevronDown, Download, Loader2, X, CheckCircle, FileCode, Paperclip, History, PanelLeft, Brain, Square, Search, File, Clipboard } from 'lucide-react';
 
-const { ipcRenderer, clipboard } = window.require('electron');
+const electron = window.require('electron');
+const ipcRenderer = electron.ipcRenderer;
+// Get clipboard - use electron module's clipboard (exposed via preload)
+const getClipboard = () => {
+  // Primary: use window.__electronModule.clipboard (from preload)
+  if (window.__electronModule?.clipboard) {
+    return window.__electronModule.clipboard;
+  }
+  // Secondary: try electron.clipboard (if directly available)
+  if (electron?.clipboard) {
+    return electron.clipboard;
+  }
+  // Fallback: use navigator.clipboard with safe wrappers
+  return {
+    writeText: async (text) => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          // Last resort: use execCommand
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-9999px';
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        }
+      } catch (err) {
+        console.error('[Clipboard] writeText failed:', err);
+      }
+    },
+    readText: async () => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          return await navigator.clipboard.readText();
+        }
+      } catch (err) {
+        console.error('[Clipboard] readText failed:', err);
+      }
+      return '';
+    }
+  };
+};
 
 // Thinking models that support extended thinking
 const THINKING_MODELS = [
@@ -1888,25 +1932,37 @@ Include:
   const handleCopy = useCallback(() => {
     const selection = window.getSelection();
     if (selection && selection.toString()) {
-      clipboard.writeText(selection.toString());
+      try {
+        const cb = getClipboard();
+        cb.writeText(selection.toString());
+      } catch (err) {
+        console.error('Clipboard copy failed:', err);
+      }
     }
     setContextMenu(null);
   }, []);
 
   const handlePaste = useCallback(async () => {
-    const text = clipboard.readText();
-    if (text && inputRef.current) {
-      const inputEl = inputRef.current;
-      const start = inputEl.selectionStart || 0;
-      const end = inputEl.selectionEnd || 0;
-      const currentValue = input;
-      const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
-      setInput(newValue);
-      // Set cursor position after paste
-      setTimeout(() => {
-        inputEl.selectionStart = inputEl.selectionEnd = start + text.length;
-        inputEl.focus();
-      }, 0);
+    try {
+      const cb = getClipboard();
+      const textResult = cb.readText();
+      // Handle both sync and async readText
+      const text = textResult instanceof Promise ? await textResult : textResult;
+      if (text && inputRef.current) {
+        const inputEl = inputRef.current;
+        const start = inputEl.selectionStart || 0;
+        const end = inputEl.selectionEnd || 0;
+        const currentValue = input;
+        const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
+        setInput(newValue);
+        // Set cursor position after paste
+        setTimeout(() => {
+          inputEl.selectionStart = inputEl.selectionEnd = start + text.length;
+          inputEl.focus();
+        }, 0);
+      }
+    } catch (err) {
+      console.error('Clipboard paste failed:', err);
     }
     setContextMenu(null);
   }, [input]);
@@ -3033,7 +3089,8 @@ function MessageContentInner({ content, onInsertCode, showApplyButtons = false, 
   
   const handleCopy = (code, index) => {
     try {
-      clipboard.writeText(code);
+      const cb = getClipboard();
+      cb.writeText(code);
     } catch (e) {
       // Fallback to navigator.clipboard if electron clipboard not available
       navigator.clipboard?.writeText(code);

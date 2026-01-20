@@ -6,7 +6,7 @@ import {
   ChevronRight, GitPullRequest, AlertCircle, Copy, Check, Key
 } from 'lucide-react';
 
-const { ipcRenderer, shell } = window.require('electron');
+const { ipcRenderer, shell, clipboard } = window.require('electron');
 
 function GitHubPanel({ onClose, onCloneRepo }) {
   const [user, setUser] = useState(null);
@@ -220,7 +220,7 @@ function LoginForm({ onSuccess, onBack }) {
 
   const copyCode = () => {
     if (deviceInfo?.userCode) {
-      navigator.clipboard.writeText(deviceInfo.userCode);
+      clipboard.writeText(deviceInfo.userCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

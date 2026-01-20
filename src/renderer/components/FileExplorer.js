@@ -195,9 +195,16 @@ function FileExplorer({ workspacePath, onFileSelect, onOpenFolder, onOpenProject
   // Load recent projects on mount
   useEffect(() => {
     const loadRecentProjects = async () => {
-      const result = await ipcRenderer.invoke('get-recent-projects');
-      if (result.success && result.projects) {
-        setRecentProjects(result.projects);
+      try {
+        console.log('[FileExplorer] Loading recent projects...');
+        const result = await ipcRenderer.invoke('get-recent-projects');
+        console.log('[FileExplorer] Recent projects result:', result);
+        if (result.success && result.projects) {
+          setRecentProjects(result.projects);
+          console.log('[FileExplorer] Set recent projects:', result.projects.length);
+        }
+      } catch (error) {
+        console.error('[FileExplorer] Error loading recent projects:', error);
       }
     };
     loadRecentProjects();

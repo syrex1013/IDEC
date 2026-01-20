@@ -17,9 +17,9 @@
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:win": "npm run build && electron-builder --win",
     "dist:linux": "npm run build && electron-builder --linux",
-    "package:mac": "electron-builder --mac",
-    "package:win": "electron-builder --win",
-    "package:linux": "electron-builder --linux"
+    "package:mac": "electron-builder --mac --publish never",
+    "package:win": "electron-builder --win --publish never",
+    "package:linux": "electron-builder --linux --publish never"
   },
   "keywords": [
     "ide",
@@ -31,11 +31,14 @@
     "electron",
     "code-editor"
   ],
-  "author": "Adrian",
+  "author": {
+    "name": "Adrian",
+    "email": "adrian@idec.dev"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/adrian/idec"
+    "url": "https://github.com/syrex1013/IDEC"
   },
   "build": {
     "appId": "com.idec.app",

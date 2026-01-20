@@ -113,13 +113,52 @@ function Terminal({ workspacePath, settings }) {
       ipcRenderer.invoke('terminal-kill', terminalId);
       term.dispose();
     };
-  }, [terminalId, terminalSettings, currentTheme]);
+  }, [terminalId]);
 
   useEffect(() => {
     const observer = new ResizeObserver(() => setTimeout(() => fitAddonRef.current?.fit(), 50));
     if (terminalRef.current) observer.observe(terminalRef.current);
     return () => observer.disconnect();
   }, []);
+
+  // Update terminal options when settings change (without recreating)
+  useEffect(() => {
+    if (!xtermRef.current) return;
+    
+    const term = xtermRef.current;
+    term.options.fontSize = terminalSettings.fontSize || 13;
+    term.options.fontFamily = terminalSettings.fontFamily || "'SF Mono', 'JetBrains Mono', 'Fira Code', monospace";
+    term.options.lineHeight = terminalSettings.lineHeight || 1.5;
+    term.options.cursorBlink = terminalSettings.cursorBlink !== false;
+    term.options.cursorStyle = terminalSettings.cursorStyle || 'bar';
+    term.options.theme = {
+      background: currentTheme.colors.background,
+      foreground: currentTheme.colors.foreground,
+      cursor: currentTheme.colors.primary,
+      cursorAccent: currentTheme.colors.background,
+      selection: currentTheme.colors.primary + '40',
+      black: currentTheme.colors.secondary,
+      red: '#ef4444',
+      green: '#22c55e',
+      yellow: '#eab308',
+      blue: currentTheme.colors.primary,
+      magenta: '#a855f7',
+      cyan: '#06b6d4',
+      white: currentTheme.colors.foreground,
+      brightBlack: currentTheme.colors.mutedForeground,
+      brightRed: '#f87171',
+      brightGreen: '#4ade80',
+      brightYellow: '#facc15',
+      brightBlue: '#60a5fa',
+      brightMagenta: '#c084fc',
+      brightCyan: '#22d3ee',
+      brightWhite: '#fafafa'
+    };
+    
+    // Refit after font changes
+    setTimeout(() => fitAddonRef.current?.fit(), 50);
+  }, [terminalSettings.fontSize, terminalSettings.fontFamily, terminalSettings.lineHeight, 
+      terminalSettings.cursorBlink, terminalSettings.cursorStyle, currentTheme]);
 
   return (
     <div style={{

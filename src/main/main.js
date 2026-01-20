@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -168,6 +168,34 @@ function createWindow() {
     mainWindow.show();
   });
 
+  // Context menu for right-click copy/paste
+  mainWindow.webContents.on('context-menu', (event, params) => {
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Cut',
+        role: 'cut',
+        enabled: params.editFlags.canCut
+      },
+      {
+        label: 'Copy',
+        role: 'copy',
+        enabled: params.editFlags.canCopy
+      },
+      {
+        label: 'Paste',
+        role: 'paste',
+        enabled: params.editFlags.canPaste
+      },
+      { type: 'separator' },
+      {
+        label: 'Select All',
+        role: 'selectAll',
+        enabled: params.editFlags.canSelectAll
+      }
+    ]);
+    contextMenu.popup();
+  });
+
   mainWindow.on('closed', () => {
     logger.info('Main window closed');
     mainWindow = null;
@@ -176,10 +204,120 @@ function createWindow() {
   });
 }
 
+// Create application menu with Edit commands for copy/paste
+function createAppMenu() {
+  const isMac = process.platform === 'darwin';
+  
+  const template = [
+    // App menu (macOS only)
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    // File menu
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Open Folder...',
+          accelerator: isMac ? 'Cmd+O' : 'Ctrl+O',
+          click: () => {
+            if (mainWindow) {
+              mainWindow.webContents.send('menu-open-folder');
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Save',
+          accelerator: isMac ? 'Cmd+S' : 'Ctrl+S',
+          click: () => {
+            if (mainWindow) {
+              mainWindow.webContents.send('menu-save');
+            }
+          }
+        },
+        { type: 'separator' },
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    // Edit menu - critical for copy/paste
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'pasteAndMatchStyle' },
+        { role: 'delete' },
+        { role: 'selectAll' },
+        { type: 'separator' },
+        ...(isMac ? [
+          {
+            label: 'Speech',
+            submenu: [
+              { role: 'startSpeaking' },
+              { role: 'stopSpeaking' }
+            ]
+          }
+        ] : [])
+      ]
+    },
+    // View menu
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    // Window menu
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac ? [
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+        ] : [
+          { role: 'close' }
+        ])
+      ]
+    }
+  ];
+  
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
 app.whenReady().then(() => {
   logger.info('App ready');
   logger.info('Log file path:', { logPath: logger.getLogPath() });
   logger.clearOldLogs();
+  createAppMenu();
   createWindow();
   
   // Send startup logs to output panel after window is ready
@@ -975,8 +1113,31 @@ ipcMain.handle('agent-read-file', async (event, workspacePath, filePath) => {
 ipcMain.handle('agent-write-file', async (event, workspacePath, filePath, content) => {
   try {
     const fullPath = path.isAbsolute(filePath) ? filePath : path.join(workspacePath, filePath);
+    // Ensure parent directory exists
+    const dir = path.dirname(fullPath);
+    await fs.promises.mkdir(dir, { recursive: true });
     await fs.promises.writeFile(fullPath, content, 'utf-8');
     return { success: true, path: fullPath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('agent-create-file', async (event, workspacePath, filePath, content = '') => {
+  try {
+    const fullPath = path.isAbsolute(filePath) ? filePath : path.join(workspacePath, filePath);
+    // Ensure parent directory exists
+    const dir = path.dirname(fullPath);
+    await fs.promises.mkdir(dir, { recursive: true });
+    // Check if file already exists
+    try {
+      await fs.promises.access(fullPath);
+      return { success: false, error: 'File already exists' };
+    } catch {
+      // File doesn't exist, create it
+      await fs.promises.writeFile(fullPath, content, 'utf-8');
+      return { success: true, path: fullPath };
+    }
   } catch (error) {
     return { success: false, error: error.message };
   }

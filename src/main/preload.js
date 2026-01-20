@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, clipboard } = require('electron');
 
 // Track callback->wrapper mappings for proper listener removal
 const listenerMap = new Map();
@@ -50,6 +50,10 @@ contextBridge.exposeInMainWorld('__electronModule', {
       // Use a custom IPC call for shell.openExternal
       return ipcRenderer.invoke('shell-open-external', url);
     }
+  },
+  clipboard: {
+    writeText: (text) => clipboard.writeText(text),
+    readText: () => clipboard.readText()
   }
 });
 
@@ -154,6 +158,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('output-log', handler);
     console.log('[Preload IPC] Registered listener for output-log');
     return () => ipcRenderer.removeListener('output-log', handler);
+  },
+  
+  // Clipboard operations
+  clipboardWriteText: (text) => clipboard.writeText(text),
+  clipboardReadText: () => clipboard.readText(),
+  
+  // Menu event listeners
+  onMenuOpenFolder: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('menu-open-folder', handler);
+    return () => ipcRenderer.removeListener('menu-open-folder', handler);
+  },
+  onMenuSave: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('menu-save', handler);
+    return () => ipcRenderer.removeListener('menu-save', handler);
   },
   
   // Environment

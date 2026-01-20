@@ -30,7 +30,8 @@ const modes = [
 // Agent tools definition
 const AGENT_TOOLS = [
   { name: 'read_file', description: 'Read contents of a file', params: ['path'] },
-  { name: 'write_file', description: 'Write content to a file', params: ['path', 'content'] },
+  { name: 'write_file', description: 'Write/overwrite content to an existing file', params: ['path', 'content'] },
+  { name: 'create_file', description: 'Create a new file with content (fails if file exists)', params: ['path', 'content'] },
   { name: 'list_files', description: 'List files in a directory', params: ['path'] },
   { name: 'search_files', description: 'Search for files by name pattern', params: ['pattern'] },
   { name: 'grep', description: 'Search for text in files', params: ['search_pattern', 'file_pattern'] },
@@ -146,6 +147,7 @@ const getToolDescription = (tool, params) => {
     case 'list_files': return `Listed ${params?.path || '.'}`;
     case 'read_file': return `Read ${params?.path}`;
     case 'write_file': return `Write ${params?.path}`;
+    case 'create_file': return `Create ${params?.path}`;
     case 'search_files': return `Search: ${params?.pattern}`;
     case 'grep': return `Grepped ${params?.search_pattern}`;
     default: return `${tool}`;
@@ -157,6 +159,7 @@ const getToolIcon = (tool) => {
     case 'list_files': return '📁';
     case 'read_file': return '📄';
     case 'write_file': return '✏️';
+    case 'create_file': return '📝';
     case 'search_files': return '🔍';
     case 'grep': return '🔎';
     default: return '⚡';
@@ -207,7 +210,7 @@ const highlightCommand = (text) => {
 function ToolResultCard({ msg, onInsertCode }) {
   const [expanded, setExpanded] = React.useState(false);
   const isSuccess = msg.result && !msg.result.toLowerCase().includes('error');
-  const isFileOp = msg.tool === 'write_file' || msg.tool === 'read_file';
+  const isFileOp = msg.tool === 'write_file' || msg.tool === 'read_file' || msg.tool === 'create_file';
   const isListOp = msg.tool === 'list_files' || msg.tool === 'search_files';
   const isGrepOp = msg.tool === 'grep';
   
@@ -348,7 +351,7 @@ function ToolPendingCard({ msg, onApprove, onDecline }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ color: '#f97316', fontFamily: "'SF Mono', monospace", fontSize: 14 }}>{'{}'}</span>
           <span style={{ fontSize: 13, color: 'var(--foreground)' }}>
-            {msg.tool === 'write_file' ? 'Write' : 'Edit'} {msg.params?.path}
+            {msg.tool === 'create_file' ? 'Create' : msg.tool === 'write_file' ? 'Write' : 'Edit'} {msg.params?.path}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -788,6 +791,33 @@ function AIPanel({ context, settings, onInsertCode, onFileReload, workspacePath,
             return `Error writing file: ${err.message}`;
           }
         }
+        case 'create_file': {
+          const targetPath = params.path;
+          if (!targetPath) return 'Error: path parameter required';
+          const content = params.content !== undefined ? params.content : '';
+          const filePath = targetPath.startsWith('/') ? targetPath : `${workspacePath}/${targetPath}`;
+          console.log(`[Agent] create_file: resolving "${targetPath}" to "${filePath}"`);
+          console.log(`[Agent] create_file: content length ${content.length} chars`);
+          try {
+            const result = await ipcRenderer.invoke('agent-create-file', workspacePath, targetPath, content);
+            console.log(`[Agent] create_file result:`, result?.success, result?.error);
+            if (!result) {
+              return `Error creating file: No response from file system`;
+            }
+            if (result.success) {
+              // Reload the file in the editor if it's open
+              if (onFileReload) {
+                console.log(`[Agent] create_file: triggering file reload for ${filePath}`);
+                onFileReload(filePath);
+              }
+              return `Successfully created ${targetPath}`;
+            }
+            return `Error creating file: ${result.error || 'Unknown error'}`;
+          } catch (err) {
+            console.error(`[Agent] create_file error:`, err);
+            return `Error creating file: ${err.message}`;
+          }
+        }
         case 'search_files': {
           const pattern = params.pattern;
           if (!pattern) return 'Error: pattern parameter required';
@@ -1048,7 +1078,8 @@ function AIPanel({ context, settings, onInsertCode, onFileReload, workspacePath,
 AVAILABLE TOOLS:
 - list_files(path): List files in a directory (use "." for current directory)
 - read_file(path): Read a file's contents
-- write_file(path, content): Write/create a file (ALWAYS use this to make file changes)
+- create_file(path, content): Create a NEW file (use when file doesn't exist)
+- write_file(path, content): Overwrite an EXISTING file (use to update existing files)
 - search_files(pattern): Search for files by name pattern
 - grep(search_pattern, file_pattern): Search for text in files
 - web_search(query): Search the web for information, documentation, APIs, or solutions
@@ -1057,8 +1088,8 @@ AVAILABLE TOOLS:
 CRITICAL RULES:
 1. When you need to perform ANY action, you MUST include the tool call XML in your response
 2. Do NOT just describe what you would do - ACTUALLY call the tool
-3. NEVER say "I will update the file" without including the <tool>write_file</tool> call
-4. Every response that involves file changes MUST include the write_file tool call
+3. NEVER say "I will update the file" without including the <tool>write_file</tool> or <tool>create_file</tool> call
+4. For NEW files, use create_file. For EXISTING files, use write_file
 5. If you need to look up documentation, APIs, or find solutions online, use web_search
 
 TOOL CALL FORMAT (you MUST use this exact XML format):
@@ -1073,7 +1104,11 @@ EXAMPLE - To read a file:
 <tool>read_file</tool>
 <params>{"path": "package.json"}</params>
 
-EXAMPLE - To write/update a file (REQUIRED when making changes):
+EXAMPLE - To create a NEW file:
+<tool>create_file</tool>
+<params>{"path": "hello.py", "content": "print('Hello, World!')"}</params>
+
+EXAMPLE - To update an EXISTING file:
 <tool>write_file</tool>
 <params>{"path": "README.md", "content": "# Project Title\\n\\nUpdated content here..."}</params>
 
@@ -1356,8 +1391,8 @@ Include:
           
           let toolResult;
           
-          // For write_file, require user approval
-          if (toolCall.tool === 'write_file') {
+          // For write_file and create_file, require user approval
+          if (toolCall.tool === 'write_file' || toolCall.tool === 'create_file') {
             setAgentStatus({ step: agentIterations, action: `Waiting for approval...`, tool: toolCall.tool });
             
             // Show the pending approval message with unique ID
@@ -1530,8 +1565,8 @@ Include:
                 
                 let toolResult;
                 
-                // For write_file, require user approval
-                if (retryToolCall.tool === 'write_file') {
+                // For write_file and create_file, require user approval
+                if (retryToolCall.tool === 'write_file' || retryToolCall.tool === 'create_file') {
                   setAgentStatus({ step: agentIterations + 1, action: `Waiting for approval...`, tool: retryToolCall.tool });
                   
                   // Show the pending approval message with unique ID
@@ -2997,7 +3032,12 @@ function MessageContentInner({ content, onInsertCode, showApplyButtons = false, 
   const parts = content.split(/(```[\w]*\n[\s\S]*?```)/g);
   
   const handleCopy = (code, index) => {
-    navigator.clipboard.writeText(code);
+    try {
+      clipboard.writeText(code);
+    } catch (e) {
+      // Fallback to navigator.clipboard if electron clipboard not available
+      navigator.clipboard?.writeText(code);
+    }
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
   };

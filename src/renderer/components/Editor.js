@@ -315,6 +315,39 @@ function Editor({ openFiles, activeFile, loadingFile, onFileSelect, onFileChange
     if (editorRef.current && activeFile) editorRef.current.focus();
   }, [activeFile]);
 
+  // Update Monaco editor options when settings change
+  useEffect(() => {
+    if (!editorRef.current) return;
+    
+    editorRef.current.updateOptions({
+      fontSize: editorSettings.fontSize || 14,
+      fontFamily: editorSettings.fontFamily || "'SF Mono', 'JetBrains Mono', 'Fira Code', monospace",
+      fontLigatures: editorSettings.fontLigatures !== false,
+      tabSize: editorSettings.tabSize || 2,
+      insertSpaces: editorSettings.insertSpaces !== false,
+      wordWrap: editorSettings.wordWrap || 'off',
+      lineNumbers: editorSettings.lineNumbers || 'on',
+      minimap: { 
+        enabled: editorSettings.minimap !== false, 
+        scale: editorSettings.minimapScale || 1 
+      },
+      scrollBeyondLastLine: editorSettings.scrollBeyondLastLine || false,
+      smoothScrolling: editorSettings.smoothScrolling !== false,
+      cursorBlinking: editorSettings.cursorBlinking || 'smooth',
+      cursorStyle: editorSettings.cursorStyle || 'line',
+      cursorWidth: editorSettings.cursorWidth || 2,
+      bracketPairColorization: { enabled: editorSettings.bracketPairColorization !== false },
+      renderWhitespace: editorSettings.renderWhitespace || 'none',
+      renderLineHighlight: editorSettings.renderLineHighlight || 'line',
+      padding: editorSettings.padding || { top: 16, bottom: 16 },
+      lineHeight: editorSettings.lineHeight || 22,
+      letterSpacing: editorSettings.letterSpacing || 0,
+      autoClosingBrackets: editorSettings.autoClosingBrackets || 'always',
+      autoClosingQuotes: editorSettings.autoClosingQuotes || 'always',
+      autoIndent: editorSettings.autoIndent || 'full',
+    });
+  }, [editorSettings]);
+
   if (!activeFile) {
     return (
       <motion.div 

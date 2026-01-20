@@ -133,6 +133,20 @@ function App() {
     }
   }, []);
 
+  // Load extensions on startup to trigger output logging
+  useEffect(() => {
+    const loadExtensionsOnStartup = async () => {
+      try {
+        // Small delay to ensure output-log listener is registered in BottomPanel
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await ipcRenderer.invoke('extensions-list');
+      } catch (error) {
+        console.error('Failed to load extensions on startup:', error);
+      }
+    };
+    loadExtensionsOnStartup();
+  }, []);
+
   // Index codebase when workspace changes
   const indexCodebase = useCallback(async (folderPath) => {
     setCodebaseIndex(null);

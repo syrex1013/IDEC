@@ -2036,11 +2036,18 @@ ipcMain.handle('extensions-list', async () => {
   try {
     ensureExtensionsDir();
     const meta = loadExtensionsMeta();
-    const count = (meta.installed || []).length;
+    const extensions = meta.installed || [];
+    const count = extensions.length;
     if (count > 0) {
       sendOutputLog('Extensions', 'info', `Loaded ${count} installed extension(s)`);
+      // Log each extension
+      for (const ext of extensions) {
+        sendOutputLog('Extensions', 'info', `  • ${ext.name || ext.id} v${ext.version || 'unknown'}`);
+      }
+    } else {
+      sendOutputLog('Extensions', 'info', 'No extensions installed');
     }
-    return { success: true, extensions: meta.installed || [] };
+    return { success: true, extensions };
   } catch (error) {
     sendOutputLog('Extensions', 'error', `Failed to load extensions: ${error.message}`);
     return { success: false, error: error.message };

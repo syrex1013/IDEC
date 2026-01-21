@@ -1,5 +1,7 @@
 <div align="center">
 
+![IDEC Banner](https://i.imgur.com/QTJF32f.jpeg)
+
 # IDEC
 
 ### Intelligent Development Environment with AI Code Assistance
@@ -18,7 +20,7 @@ A modern, feature-rich integrated development environment powered by AI, combini
 
 ## Overview
 
-IDEC is a next-generation integrated development environment that seamlessly integrates AI-powered coding assistance into your workflow. Built on modern web technologies, IDEC offers a responsive, intuitive interface with support for multiple AI providers including Claude, OpenAI, Groq, and local models via Ollama.
+IDEC is a next-generation integrated development environment that seamlessly integrates AI-powered coding assistance into your workflow. Built on modern web technologies, IDEC offers a responsive, intuitive interface that accelerates your development process.
 
 ### Key Highlights
 

@@ -705,7 +705,7 @@ function AIPanel({ context, settings, onInsertCode, onFileReload, workspacePath,
       };
       
       const result = await ipcRenderer.invoke('fetch-models', provider, config);
-      if (result.success) {
+      if (result.success && result.models) {
         const modelIds = result.models.map(m => typeof m === 'string' ? m : m.id);
         setModels(modelIds);
         if (modelIds.length > 0 && !modelIds.includes(selectedModel)) {

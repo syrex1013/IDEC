@@ -339,7 +339,7 @@ describe('GitHubPanel', () => {
   it('submits login with token', async () => {
     mockInvoke
       .mockResolvedValueOnce({ success: false, error: 'Not logged in' })
-      .mockResolvedValueOnce({ success: true, user: { login: 'newuser', name: 'New User', avatar_url: '' } })
+      .mockResolvedValueOnce({ success: true, user: { login: 'newuser', name: 'New User', avatar_url: 'https://example.com/newuser.png' } })
       .mockResolvedValueOnce({ success: true, repos: [] })
       .mockResolvedValueOnce({ success: true, notifications: [] });
     
